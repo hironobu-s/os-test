@@ -1,0 +1,40 @@
+- name: Install Keystone
+  apt: name={{ item }} state=present
+  with_items:
+    - keystone
+    - apache2
+    - libapache2-mod-wsgi
+
+- name: Create database for Keystone
+  mysql_db: name=keystone encoding=latin1 state=present
+
+- name: Create keystone user
+  mysql_user: >-
+    name=keystone
+    password=keystone
+    priv=keystone.*:all
+    host=%
+
+- name: Set DSN to connect to local MySQL server
+  ini_file: >-
+    dest=/etc/keystone/keystone.conf
+    section=database
+    option=connection
+    value='mysql+pymysql://keystone:{{ keystone_mysql_password }}@localhost/keystone'
+
+- name: Set token provider
+  ini_file: >-
+    dest=/etc/keystone/keystone.conf
+    section=token
+    option=provider
+    value=fernet
+
+- name: Initialize keystone database
+  command: 'keystone-manage db_sync'
+  when: do_initialize
+  notify: "Restart keystone"
+
+- name: Initialize Fernet key
+  command: 'keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone'
+  when: do_initialize
+  notify: "Restart keystone"

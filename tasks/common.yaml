@@ -1,0 +1,30 @@
+- name: Install MySQL
+  apt: name={{ item }} state=present
+  with_items:
+    - mysql-server
+    - mysql-client
+
+- name: Install RabbitMQ
+  apt: name=rabbitmq-server state=present
+
+- name: Configure RabbitMQ
+  rabbitmq_user: user=openstack
+                 password=openstack
+                 vhost=/
+                 configure_priv=.*
+                 read_priv=.*
+                 write_priv=.*
+                 state=present
+
+- name: Install memcached
+  apt: name={{ item }} state=present
+  with_items:
+    - memcached
+    - python-memcache
+
+- name: Allow memcached to listen on internal_ip
+  replace: >-
+    dest=/etc/memcached.conf
+    regexp='-l [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'
+    replace='-l {{ internal_ip }}'
+  notify: "Restart memcached"

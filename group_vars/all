@@ -1,0 +1,5 @@
+external_ip:
+internal_ip:
+admin_token: secret
+do_initialize: true
+keystone_mysql_password: keystone
