@@ -1,12 +1,5 @@
-- hosts: openstack
+---
 
-  remote_user: hiro
-  become: true
-
-  tasks:
-    - include: tasks/common.yaml
-    - include: tasks/keystone.yaml
-
-  handlers:
-    - include: handlers/common.yaml
-    - include: handlers/keystone.yaml
+#  tasks:
+- include: tasks/common.yaml
+- include: tasks/keystone.yaml

@@ -1,40 +1,54 @@
-- name: Install Keystone
-  apt: name={{ item }} state=present
-  with_items:
+- name: Install and setup Keystone
+  hosts: keystone
+  remote_user: hiro
+  become: true
+  become_user: root
+  tags:
     - keystone
-    - apache2
-    - libapache2-mod-wsgi
 
-- name: Create database for Keystone
-  mysql_db: name=keystone encoding=latin1 state=present
+  tasks:
+    - name: Install Keystone via apt
+      apt: name={{ item }} state=present
+      with_items:
+        - keystone
+        - apache2
+        - libapache2-mod-wsgi
+        - python-openstackclient
 
-- name: Create keystone user
-  mysql_user: >-
-    name=keystone
-    password=keystone
-    priv=keystone.*:all
-    host=%
+    - name: Create database for Keystone
+      mysql_db: name=keystone encoding=latin1 state=present
 
-- name: Set DSN to connect to local MySQL server
-  ini_file: >-
-    dest=/etc/keystone/keystone.conf
-    section=database
-    option=connection
-    value='mysql+pymysql://keystone:{{ keystone_mysql_password }}@localhost/keystone'
+    - name: Create keystone user
+      mysql_user: >-
+        name=keystone
+        password=keystone
+        priv=keystone.*:all
+        host=%
 
-- name: Set token provider
-  ini_file: >-
-    dest=/etc/keystone/keystone.conf
-    section=token
-    option=provider
-    value=fernet
+    - name: Set DSN to connect to local MySQL server
+      ini_file: >-
+        dest=/etc/keystone/keystone.conf
+        section=database
+        option=connection
+        value='mysql+pymysql://keystone:{{ keystone_mysql_password }}@localhost/keystone'
 
-- name: Initialize keystone database
-  command: 'keystone-manage db_sync'
-  when: do_initialize
-  notify: "Restart keystone"
+    - name: Set token provider
+      ini_file: >-
+        dest=/etc/keystone/keystone.conf
+        section=token
+        option=provider
+        value=fernet
 
-- name: Initialize Fernet key
-  command: 'keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone'
-  when: do_initialize
-  notify: "Restart keystone"
+    - name: Initialize keystone database
+      command: 'keystone-manage db_sync'
+      when: do_initialize
+      notify: "Restart keystone"
+
+    - name: Initialize Fernet key
+      command: 'keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone'
+      when: do_initialize
+      notify: "Restart keystone"
+
+  handlers:
+    - name: Restart keystone
+      service: name=keystone state=restarted

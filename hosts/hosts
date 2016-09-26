@@ -1,2 +1,5 @@
 [openstack]
 localhost:10022
+
+[keystone]
+localhost:10022
